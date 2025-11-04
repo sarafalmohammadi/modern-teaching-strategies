@@ -44,4 +44,6 @@ html[dir="rtl"] * {
 
 body {
   padding-top: 4.5rem; /* لإزاحة المحتوى تحت الشريط الثابت */
+  font-family: "Tajawal", sans-serif;
+  background-color: #f9fafb;
 }
