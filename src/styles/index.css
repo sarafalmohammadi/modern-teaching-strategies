@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html[dir="rtl"] * {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Cards */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200;
+}
+.card-hover {
+  @apply transition-transform hover:-translate-y-1 hover:shadow-md;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium;
+}
+.btn-primary {
+  @apply bg-qassimDark text-white hover:bg-qassimIndigo;
+}
+.btn-light {
+  @apply bg-white text-qassimDark border border-qassimDark hover:bg-qassimGrey;
+}
+
+
+
+/* === Responsive Enhancements (smart layout) === */
+@layer base {
+  html { font-size: clamp(14px, 1.2vw + 0.25rem, 18px); }
+  img, video, iframe { max-width: 100%; height: auto; }
+}
+
+@layer utilities {
+  .container-responsive { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+  .stack-sm { @apply flex flex-col sm:flex-row gap-2 sm:gap-3; }
+  .btn-responsive { @apply px-3 py-2 text-sm sm:text-base; }
+  .admin-actions { @apply flex flex-col sm:flex-row gap-2 sm:gap-2; }
+  .card-responsive { @apply p-4 sm:p-5 md:p-6; }
+}
+
+body {
+  padding-top: 4.5rem; /* لإزاحة المحتوى تحت الشريط الثابت */
+}
