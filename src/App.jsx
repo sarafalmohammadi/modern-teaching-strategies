@@ -10,7 +10,6 @@ import Register from './pages/Register'
 import AdminDashboard from './pages/AdminDashboard'
 import SubmitStrategy from './pages/SubmitStrategy'
 import { AuthProvider, useAuth } from './firebase/AuthContext'
-import { Analytics } from '@vercel/analytics/react';
 
 
 function PrivateRoute({ children }) {
@@ -37,7 +36,6 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
-        <Analytics />
       </div>
     </AuthProvider>
   )
