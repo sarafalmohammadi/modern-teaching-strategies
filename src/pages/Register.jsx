@@ -66,7 +66,7 @@ export default function Register() {
         />
         <input
           className="w-full border rounded px-3 py-2"
-          placeholder="البريد الجامعي"
+          placeholder="البريد الإلكتروني"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
