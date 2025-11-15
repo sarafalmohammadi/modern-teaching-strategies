@@ -62,7 +62,7 @@ export default function Home() {
             <h3 className="font-bold text-lg mb-2 text-qassimDark">الأهداف</h3>
             <ul className="text-sm text-gray-600 leading-relaxed list-disc pr-5 text-right">
               <li>نشر ثقافة الاستراتيجيات الحديثة في التعليم.</li>
-              <li>تدريب الطالبات على تحويل المعرفة النظرية إلى ممارسات واقعية.</li>
+              <li>تدريب المعلمات على تحويل المعرفة النظرية إلى ممارسات واقعية.</li>
               <li>تشجيع الإبداع والابتكار في عرض الدروس.</li>
               <li>إثراء المحتوى التعليمي التفاعلي.</li>
             </ul>
