@@ -9,8 +9,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import AdminDashboard from './pages/AdminDashboard'
 import SubmitStrategy from './pages/SubmitStrategy'
+import Preview from './pages/Preview'   // <<< مهم جداً
 import { AuthProvider, useAuth } from './firebase/AuthContext'
-
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -22,6 +22,7 @@ export default function App() {
     <AuthProvider>
       <div className="min-h-screen flex flex-col">
         <Navbar />
+
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -30,14 +31,42 @@ export default function App() {
             <Route path="/strategies/:id" element={<StrategyDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/submit" element={<PrivateRoute><SubmitStrategy /></PrivateRoute>} />
-            <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+
+            <Route
+              path="/submit"
+              element={
+                <PrivateRoute>
+                  <SubmitStrategy />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* <<< صفحة المعاينة الجديدة */}
+            <Route
+              path="/preview/:id"
+              element={
+                <PrivateRoute>
+                  <Preview />
+                </PrivateRoute>
+              }
+            />
+
+            {/* fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
         <Footer />
       </div>
     </AuthProvider>
   )
 }
-

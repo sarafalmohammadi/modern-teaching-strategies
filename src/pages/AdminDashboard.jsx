@@ -5,6 +5,8 @@ import { db, ADMIN_EMAILS } from '../firebase/config';
 import { useAuth } from '../firebase/AuthContext';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { Eye } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+
 import Quiz from '../components/Quiz'; // عدّلي المسار إذا كان مختلفًا
 
 export default function AdminDashboard() {
@@ -15,6 +17,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('strategies');
   const [sortOption, setSortOption] = useState('newest');
   const [preview, setPreview] = useState(null);
+  const navigate = useNavigate();
   const isAdmin = user && ADMIN_EMAILS.includes(user.email);
   const auth = getAuth();
 
@@ -315,12 +318,13 @@ export default function AdminDashboard() {
 
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <button
-                      onClick={() => setPreview(it)}
-                      className="border border-gray-400 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-100 transition flex items-center gap-1"
-                    >
-                      <Eye className="w-4 h-4 text-gray-700" />
-                      <span>معاينة</span>
+                    onClick={() => navigate(`/preview/${it.id}`)}
+                    className="border border-gray-400 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-100 transition flex items-center gap-1"
+                      >
+                    <Eye className="w-4 h-4 text-gray-700" />
+                   <span>معاينة</span>
                     </button>
+
 
                     {it.status === 'pending' ? (
                       <>
@@ -412,138 +416,6 @@ export default function AdminDashboard() {
                 </div>
               ))
             )}
-          </div>
-        </div>
-      )}
-
-      {/* نافذة المعاينة */}
-      {preview && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-4">
-          <div className="bg-white p-6 rounded-xl shadow-xl max-w-3xl w-full relative overflow-y-auto max-h-[90vh]">
-            <button
-              onClick={() => setPreview(null)}
-              className="absolute top-2 right-3 text-gray-600 hover:text-black text-xl font-bold"
-            >
-              ×
-            </button>
-
-            <h3 className="text-2xl font-bold text-qassimDark mb-4 text-center">
-              {preview.name}
-            </h3>
-
-            <div className="space-y-4 text-gray-800">
-              {preview.definition && (
-                <p><strong>التعريف:</strong> {preview.definition}</p>
-              )}
-              {preview.objectives && (
-                <p><strong>الأهداف:</strong> {preview.objectives}</p>
-              )}
-              {preview.steps && (
-                <div>
-                  <strong>الخطوات:</strong>
-                  <div className="whitespace-pre-line mt-1">{preview.steps}</div>
-                </div>
-              )}
-              {preview.teacherRole && (
-                <p><strong>دور المعلم:</strong> {preview.teacherRole}</p>
-              )}
-              {preview.studentRole && (
-                <p><strong>دور المتعلم:</strong> {preview.studentRole}</p>
-              )}
-              {preview.advantages && (
-                <p><strong>مميزاتها:</strong> {preview.advantages}</p>
-              )}
-              {preview.situations && (
-                <p><strong>متى تُستخدم:</strong> {preview.situations}</p>
-              )}
-
-              {/* المراجع */}
-              {extractReferences(preview).length > 0 && (
-                <div className="mt-4">
-                  <strong className="block mb-2">المراجع (APA):</strong>
-                  <ul className="list-disc pr-5 space-y-1">
-                    {extractReferences(preview).map((r, i) => (
-                      <li key={i} className="text-sm">
-                        {formatAPA(r)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* الفيديو */}
-              {preview.videoURL && (
-                <div className="mt-4">
-                  <strong className="block mb-2">الفيديو التوضيحي:</strong>
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border">
-                    <iframe
-                      title="strategy-video"
-                      src={toEmbedURL(preview.videoURL)}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* الملف المرفق */}
-              {preview.worksheetURL && (
-                <div className="mt-4">
-                  <strong className="block mb-2">ورقة العمل:</strong>
-                  <a
-                    href={preview.worksheetURL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50"
-                  >
-                    فتح/تحميل المرفق
-                  </a>
-                </div>
-              )}
-
-              {/* الكويز */}
-              {Array.isArray(preview.quiz?.questions) && preview.quiz.questions.length > 0 && (
-                <div className="mt-6">
-                  <Quiz questions={preview.quiz.questions} />
-                </div>
-              )}
-            </div>
-
-            {/* أزرار الإدارة داخل المعاينة (اختياري) */}
-            <div className="mt-6 flex flex-wrap gap-2 justify-end">
-              {preview.status === 'pending' ? (
-                <>
-                  <button
-                    onClick={() => { act(preview.id, 'approved'); setPreview(null); }}
-                    className="bg-qassimDark text-white px-3 py-1.5 rounded-md hover:bg-qassimIndigo transition"
-                  >
-                    اعتماد
-                  </button>
-                  <button
-                    onClick={() => { act(preview.id, 'rejected'); setPreview(null); }}
-                    className="border border-qassimDark text-qassimDark px-3 py-1.5 rounded-md hover:bg-gray-100 transition"
-                  >
-                    رفض
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => { hideStrategy(preview.id, !preview.hidden); setPreview({ ...preview, hidden: !preview.hidden }); }}
-                    className="border border-gray-400 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-100 transition"
-                  >
-                    {preview.hidden ? 'إظهار بالموقع' : 'إخفاء من الموقع'}
-                  </button>
-                  <button
-                    onClick={() => { deleteStrategy(preview.id); setPreview(null); }}
-                    className="border border-red-500 text-red-600 px-3 py-1.5 rounded-md hover:bg-red-50 transition"
-                  >
-                    حذف نهائي
-                  </button>
-                </>
-              )}
-            </div>
           </div>
         </div>
       )}

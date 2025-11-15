@@ -7,9 +7,11 @@ export default function Quiz({ questions = [] }) {
   const submit = (e) => {
     e.preventDefault()
     let correct = 0
+
     questions.forEach((q, idx) => {
-      if (answers[idx] === q.correct) correct++
+      if (answers[idx] === q.correctIndex) correct++
     })
+
     setResult(`نتيجتك: ${correct} / ${questions.length}`)
   }
 
@@ -33,6 +35,7 @@ export default function Quiz({ questions = [] }) {
             <p className="font-medium text-qassimDark mb-2">
               {idx + 1}. {q.question}
             </p>
+
             <div className="space-y-2">
               {q.options.map((opt, i) => (
                 <label key={i} className="flex items-center gap-2 cursor-pointer text-sm">
@@ -50,13 +53,12 @@ export default function Quiz({ questions = [] }) {
           </div>
         ))}
 
-<button
-  type="submit"
-  className="block mx-auto text-center w-full sm:w-auto px-6 py-2 mt-4 bg-qassimIndigo text-white font-semibold rounded-lg shadow-sm hover:bg-qassimLight transition"
->
-  تحقق من الإجابات
-</button>
-
+        <button
+          type="submit"
+          className="block mx-auto text-center w-full sm:w-auto px-6 py-2 mt-4 bg-qassimIndigo text-white font-semibold rounded-lg shadow-sm hover:bg-qassimLight transition"
+        >
+          تحقق من الإجابات
+        </button>
       </form>
 
       {result && (

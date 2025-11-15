@@ -18,7 +18,12 @@ export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
 
-// حددي ايميلات المشرفين (الدكتورة) هنا كبداية
+// عناوين البريد الإلكتروني للأدمن كنترول فقط 
 export const ADMIN_EMAILS = [
-  'sara.falmohammadi@gmail.com'
+  'sara.falmohammadi@gmail.com',
+  'alrefaeinedaa@gmail.com',
+  'Amanii.almalki@gmail.com',
+  
+  
+  
 ]

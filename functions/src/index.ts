@@ -12,7 +12,10 @@ export const getAllUsers = functions.https.onCall(async (data: any, context: any
   const email = context.auth.token.email || "";
   const allowedAdmins = [
     "sara.falmohammadi@gmail.com",
-    "dr.qassim@gmail.com",
+    "sara.fawaz1998@gmail.com",
+    "alrefaeinedaa@gmail.com",
+    "Amanii.almalki@gmail.com",
+    
   ]; // عدلي الإيميلات حسب حسابات الأدمن المسموح لها
 
   if (!allowedAdmins.includes(email)) {

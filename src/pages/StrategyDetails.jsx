@@ -124,45 +124,59 @@ export default function StrategyDetails() {
           </div>
         )}
 
-        {/* الفيديو */}
-        {item.videoURL && (
-          <div className="rounded-xl overflow-hidden shadow-md">
-            <iframe
-              src={toEmbedURL(item.videoURL)}
-              title="strategy-video"
-              className="w-full aspect-video rounded-md"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
+         {/* الفيديو */}
+{item.videoURL &&
+  typeof item.videoURL === "string" &&
+  item.videoURL.trim() !== "" &&
+  item.videoURL.includes("http") && (
+    <div className="rounded-xl overflow-hidden shadow-md mt-6">
+      <strong className="block mb-2 text-qassimDark">الفيديو التوضيحي:</strong>
+      <div className="aspect-video w-full rounded-lg overflow-hidden border">
+        <iframe
+          src={toEmbedURL(item.videoURL)}
+          title="strategy-video"
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </div>
+)}
 
-        {/* المرفق */}
-        {item.worksheetURL && (
-          <div className="text-center">
-            <a
-              href={item.worksheetURL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-qassimIndigo text-white px-5 py-2 rounded-lg text-sm hover:bg-qassimLight transition"
-            >
-              📄 عرض ورقة العمل المرفقة
-            </a>
-          </div>
-        )}
 
-        {/* الكويز */}
-        {Array.isArray(item.quiz) && item.quiz.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-qassimIndigo mb-4">اختبار تقويمي قصير</h3>
-            <Quiz
-              questions={item.quiz.map((q) => ({
-                text: q.question,
-                options: q.options,
-                correct: q.correct,
-              }))}
-            />
-          </div>
+       {/* المرفق */}
+{item.worksheetURL && (
+  <div className="text-center">
+    <a
+      href={item.worksheetURL}   
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-2 bg-qassimIndigo text-white px-5 py-2 rounded-lg text-sm hover:bg-qassimLight transition"
+    >
+      📄 عرض ورقة العمل المرفقة
+    </a>
+  </div>
+)}
+
+
+
+ {/* الكويز */}
+{Array.isArray(item.quiz) && item.quiz.length > 0 && (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 className="text-lg font-semibold text-qassimIndigo mb-4">
+      اختبار تقويمي قصير
+    </h3>
+
+    <Quiz
+  questions={item.quiz.map((q) => ({
+    question: q.question,
+    options: q.options,
+    correctIndex: (q.answer ?? 1) - 1, // 🔥 التحويل الصحيح (من 1–4 إلى 0–3)
+  }))}
+/>
+
+  </div>
+
         )}
       </div>
     </section>
