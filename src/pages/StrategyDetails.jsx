@@ -168,16 +168,17 @@ export default function StrategyDetails() {
     </h3>
 
     <Quiz
-  questions={item.quiz.map((q) => ({
-    question: q.question,
-    options: q.options,
-    correctIndex: (q.answer ?? 1) - 1, // 🔥 التحويل الصحيح (من 1–4 إلى 0–3)
-  }))}
-/>
-
+      questions={item.quiz.map((q) => ({
+        question: q.question,
+        options: q.options,
+        // 👇 هنا المهم:
+        // يدعم الحقول القديمة (answer) والجديدة (correct)
+        correctIndex: Number(q.correct ?? q.answer ?? 1) - 1,
+      }))}
+    />
   </div>
+)}
 
-        )}
       </div>
     </section>
   )

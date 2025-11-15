@@ -171,7 +171,14 @@ export default function Preview() {
         {data.quiz && Array.isArray(data.quiz) && data.quiz.length > 0 && (
           <div>
             <strong className="block mb-2">الاختبار القصير:</strong>
-            <Quiz questions={data.quiz} />
+            <Quiz
+  questions={data.quiz.map((q) => ({
+    question: q.question,
+    options: q.options,
+    correctIndex: (q.correct ?? q.answer ?? 1) - 1, 
+  }))}
+/>
+
           </div>
         )}
 
