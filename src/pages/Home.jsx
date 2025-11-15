@@ -97,7 +97,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-qassimDark mb-4">لماذا استراتيجياتنا التعليمية؟</h2>
           <p className="text-gray-700 text-sm leading-relaxed">
-            منصة معرفية تفاعلية تهدف إلى تمكين الطالبات والمعلمات من تحويل الفكر التربوي إلى ممارسة
+            منصة معرفية تفاعلية تهدف إلى تمكين المعلمات والمتدربات من تحويل الفكر التربوي إلى ممارسة
             تعليمية واقعية، داخل بيئة رقمية آمنة وداعمة للإبداع.
           </p>
           <div className="mt-6">
