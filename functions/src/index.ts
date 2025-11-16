@@ -14,7 +14,7 @@ export const getAllUsers = functions.https.onCall(async (data: any, context: any
     "sara.falmohammadi@gmail.com",
     "sara.fawaz1998@gmail.com",
     "alrefaeinedaa@gmail.com",
-    "Amanii.almalki@gmail.com",
+    "amanii.almalki@gmail.com",
     
   ]; // عدلي الإيميلات حسب حسابات الأدمن المسموح لها
 
