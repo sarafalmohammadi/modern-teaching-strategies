@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../firebase/AuthContext'
 import { BookOpen, Lightbulb, Target, Video, FileText, Brain } from 'lucide-react'
+import { Search, Plus } from "lucide-react";
+import { Hand } from "lucide-react";
+
+
 
 export default function Home() {
   const { user } = useAuth()
@@ -10,9 +14,11 @@ export default function Home() {
       {/* 🟣 القسم العلوي (Hero Section) */}
       <section className="rounded-2xl bg-gradient-to-br from-qassimIndigo to-qassimLight text-white p-10 shadow-lg mt-4">
         {user && (
-          <p className="text-sm mb-3 text-qassimYellow/90 font-medium">
-            👋 مرحبًا، {user.displayName || user.email}
-          </p>
+          <p className="text-sm mb-3 text-qassimYellow/90 font-medium flex items-center gap-2">
+  <Hand size={16} />
+  مرحبًا، {user.displayName || user.email}
+</p>
+
         )}
         <h1 className="text-4xl font-bold mb-2">استراتيجياتنا التعليمية</h1>
         <h2 className="text-lg font-semibold mb-4">تعلم، طبّق، أبدع!</h2>
@@ -21,17 +27,21 @@ export default function Home() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <Link
-            to="/strategies"
-            className="px-6 py-3 bg-white text-qassimIndigo font-semibold rounded-lg shadow hover:bg-gray-100 transition"
-          >
-            🎓 استكشف الاستراتيجيات
-          </Link>
-          <Link
-            to="/submit"
-            className="px-6 py-3 border-2 border-white rounded-lg font-semibold hover:bg-white hover:text-qassimIndigo transition"
-          >
-            ➕ أضف استراتيجيتك
-          </Link>
+  to="/strategies"
+  className="px-6 py-3 bg-white text-qassimIndigo font-semibold rounded-lg shadow hover:bg-gray-100 transition flex items-center gap-2"
+>
+  <Search size={20} />
+  استكشف الاستراتيجيات
+</Link>
+
+<Link
+  to="/submit"
+  className="px-6 py-3 border-2 border-white rounded-lg font-semibold hover:bg-white hover:text-qassimIndigo transition flex items-center gap-2"
+>
+  <Plus size={20} />
+  أضف استراتيجيتك
+</Link>
+
         </div>
       </section>
 

@@ -22,6 +22,7 @@ export default function SubmitStrategy() {
     teacherRole: "",
     studentRole: "",
     advantages: "",
+    disadvantages: "",
     situations: "",
     videoURL: "",
   });
@@ -63,6 +64,7 @@ export default function SubmitStrategy() {
             teacherRole: data.teacherRole || "",
             studentRole: data.studentRole || "",
             advantages: data.advantages || "",
+            disadvantages: data.disadvantages || "",
             situations: data.situations || "",
             videoURL: data.videoURL || "",
           });
@@ -238,6 +240,14 @@ export default function SubmitStrategy() {
         <Field label="دور المعلم" name="teacherRole" value={form.teacherRole} onChange={change} multiline required />
         <Field label="دور المتعلم" name="studentRole" value={form.studentRole} onChange={change} multiline required />
         <Field label="مميزاتها التربوية" name="advantages" value={form.advantages} onChange={change} multiline required />
+        <Field
+  label="عيوب الاستراتيجية"
+  name="disadvantages"
+  value={form.disadvantages}
+  onChange={change}
+  multiline
+  required
+/>
         <Field label="متى تُستخدم؟" name="situations" value={form.situations} onChange={change} multiline required />
 
         {/* References */}
