@@ -52,7 +52,7 @@ export default function SubmitStrategy() {
       }
 
       try {
-        const snap = await getDoc(doc(db, "strategies", editId));
+        const snap = await getDoc(doc(db, "users", user.uid, "strategies", editId));
         if (snap.exists()) {
           const data = snap.data();
 
@@ -137,72 +137,85 @@ export default function SubmitStrategy() {
     setMsg("");
     setLoading(true);
 
-    let worksheetURL = existingFile;
+    /** 🔥 التعديل الوحيد هنا 🔥 **/
+   /** 🔥 التعديل يبدأ هنا 🔥 **/
+let worksheetURL = existingFile ?? null;
 
-    try {
-      // validation
-      for (const [key, value] of Object.entries(form)) {
-        if (key !== "videoURL" && !value.trim()) {
-          setMsg("⚠️ يرجى تعبئة جميع الحقول قبل الإرسال");
-          setLoading(false);
-          return;
-        }
-      }
-
-      for (const q of quiz) {
-        if (!q.question.trim()) {
-          setMsg("⚠️ يرجى كتابة كل الأسئلة");
-          setLoading(false);
-          return;
-        }
-        if (q.correct < 1 || q.correct > 4) {
-          setMsg("⚠️ الإجابة الصحيحة يجب أن تكون بين 1–4");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // رفع ملف جديد فقط عند وجوده
-      if (file) {
-        const max = 20 * 1024 * 1024;
-        if (file.size > max) {
-          setMsg("⚠️ حجم الملف يتجاوز 20MB");
-          setLoading(false);
-          return;
-        }
-
-        worksheetURL = await uploadToCloudinary(file, user.email);
-      }
-
-      // تحديث (Edit)
-      if (editId) {
-        await updateDoc(doc(db, "strategies", editId), {
-          ...form,
-          references,
-          quiz,
-          worksheetURL,
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        // إضافة جديدة
-        await addDoc(collection(db, "strategies"), {
-          ...form,
-          references,
-          quiz,
-          worksheetURL,
-          status: "pending",
-          submittedBy: user.displayName || user.email,
-          timestamp: serverTimestamp(),
-        });
-      }
-
-      setSuccess(true);
-
-    } catch (err) {
-      setMsg(err.message || "حدث خطأ غير متوقع.");
-    } finally {
+try {
+  // validation
+  for (const [key, value] of Object.entries(form)) {
+    if (key !== "videoURL" && !value.trim()) {
+      setMsg("⚠️ يرجى تعبئة جميع الحقول قبل الإرسال");
       setLoading(false);
+      return;
     }
+  }
+
+  for (const q of quiz) {
+    if (!q.question.trim()) {
+      setMsg("⚠️ يرجى كتابة كل الأسئلة");
+      setLoading(false);
+      return;
+    }
+    if (q.correct < 1 || q.correct > 4) {
+      setMsg("⚠️ الإجابة الصحيحة يجب أن تكون بين 1–4");
+      setLoading(false);
+      return;
+    }
+  }
+
+  // رفع ملف جديد فقط إذا رفع المستخدم ملف جديد
+  if (file) {
+    const max = 20 * 1024 * 1024;
+    if (file.size > max) {
+      setMsg("⚠️ حجم الملف يتجاوز 20MB");
+      setLoading(false);
+      return;
+    }
+
+    worksheetURL = await uploadToCloudinary(file, user.email);
+  }
+
+  /** --------------------------------------
+   * 🔥 تعديل → المسار الجديد فقط ONLY
+   * -------------------------------------- **/
+  if (editId) {
+    const uid = params.get("u") || user.uid; // fallback لو ما مرّرت src=u
+
+    const ref = doc(db, "users", uid, "strategies", editId);
+
+    await updateDoc(ref, {
+      ...form,
+      references,
+      quiz,
+      worksheetURL,
+      updatedAt: serverTimestamp(),
+    });
+
+  } else {
+    /** --------------------------------------
+     * 🔥 إضافة جديدة → المسار الجديد ONLY
+     * -------------------------------------- **/
+    await addDoc(collection(db, "users", user.uid, "strategies"), {
+      ...form,
+      references,
+      quiz,
+      worksheetURL,
+      status: "pending",
+      submittedBy: user.displayName || user.email,
+      userId: user.uid,
+      timestamp: serverTimestamp(),
+    });
+  }
+
+  setSuccess(true);
+
+} catch (err) {
+  setMsg(err.message || "حدث خطأ غير متوقع.");
+} finally {
+  setLoading(false);
+}
+
   };
 
   if (!loaded) return <p className="text-center mt-20">جاري التحميل...</p>;
@@ -241,13 +254,13 @@ export default function SubmitStrategy() {
         <Field label="دور المتعلم" name="studentRole" value={form.studentRole} onChange={change} multiline required />
         <Field label="مميزاتها التربوية" name="advantages" value={form.advantages} onChange={change} multiline required />
         <Field
-  label="عيوب الاستراتيجية"
-  name="disadvantages"
-  value={form.disadvantages}
-  onChange={change}
-  multiline
-  required
-/>
+          label="عيوب الاستراتيجية"
+          name="disadvantages"
+          value={form.disadvantages}
+          onChange={change}
+          multiline
+          required
+        />
         <Field label="متى تُستخدم؟" name="situations" value={form.situations} onChange={change} multiline required />
 
         {/* References */}
@@ -315,17 +328,15 @@ export default function SubmitStrategy() {
           <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} className="block w-full text-sm border rounded-lg p-2" />
         </div>
 
-         <button
-  disabled={loading}
-  className={`w-full py-3 font-semibold rounded-lg shadow-sm transition 
-    text-center flex justify-center items-center
-    ${loading ? "bg-gray-400" : "bg-qassimIndigo text-white hover:bg-qassimLight"}
-  `}
->
-  {loading ? "جاري الحفظ..." : editId ? "حفظ التعديلات" : "إرسال للمراجعة"}
-</button>
-
-
+        <button
+          disabled={loading}
+          className={`w-full py-3 font-semibold rounded-lg shadow-sm transition 
+            text-center flex justify-center items-center
+            ${loading ? "bg-gray-400" : "bg-qassimIndigo text-white hover:bg-qassimLight"}
+          `}
+        >
+          {loading ? "جاري الحفظ..." : editId ? "حفظ التعديلات" : "إرسال للمراجعة"}
+        </button>
 
         {msg && <p className="text-center text-red-600 mt-3">{msg}</p>}
       </form>

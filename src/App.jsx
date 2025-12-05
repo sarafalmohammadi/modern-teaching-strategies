@@ -11,6 +11,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import SubmitStrategy from './pages/SubmitStrategy'
 import Preview from './pages/Preview'   // <<< مهم جداً
 import { AuthProvider, useAuth } from './firebase/AuthContext'
+import Profile from './pages/Profile'
+
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -25,12 +27,22 @@ export default function App() {
 
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
           <Routes>
+            
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/strategies" element={<Strategies />} />
             <Route path="/strategies/:id" element={<StrategyDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route
+  path="/profile"
+  element={
+    <PrivateRoute>
+      <Profile />
+    </PrivateRoute>
+  }
+/>
+
 
             <Route
               path="/submit"

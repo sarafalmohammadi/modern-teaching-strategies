@@ -1,58 +1,98 @@
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { useAuth } from '../firebase/AuthContext'
-import { auth } from '../firebase/config'
-import { signOut } from 'firebase/auth'
-import { Menu, X } from 'lucide-react'
+import { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../firebase/AuthContext";
+import { auth } from "../firebase/config";
+import { signOut } from "firebase/auth";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
-  const { user } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
-  const active = ({ isActive }) =>
-    isActive ? 'text-qassimIndigo font-bold' : 'text-gray-700'
+  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const toggleMenu = () => setIsOpen(!isOpen)
-  const closeMenu = () => setIsOpen(false)
+  const active = ({ isActive }) =>
+    isActive ? "text-qassimIndigo font-bold" : "text-gray-700";
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
+
+  // حرف الأفاتار (لو فيه يوزر)
+  const avatarLetter = user
+    ? (user.displayName || user.email || "?")[0].toUpperCase()
+    : null;
 
   return (
     <header className="bg-white border-b border-gray-200 fixed top-0 left-0 w-full z-50">
       <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* شعار الموقع */}
         <Link to="/" className="flex items-center gap-4" onClick={closeMenu}>
-  {/* شعار الجامعة */}
-  <img
-    src="/logo-qassim.png"
-    alt="شعار جامعة القصيم"
-    className="h-8 sm:h-9 w-auto object-contain"
-  />
+          {/* شعار الجامعة */}
+          <img
+            src="/logo-qassim.png"
+            alt="شعار جامعة القصيم"
+            className="h-8 sm:h-9 w-auto object-contain"
+          />
 
-  {/* اسم الموقع + الشعار النصي */}
-  <div className="flex flex-col items-start leading-tight">
-    <span className="font-bold text-qassimDark text-sm sm:text-base">
-      استراتيجياتنا التعليمية
-    </span>
-    <span className="text-xs text-qassimLight hidden sm:block">
-      تعلم، طبّق، أبدع!
-    </span>
-  </div>
-</Link>
-
-
+          {/* اسم الموقع + الشعار النصي */}
+          <div className="flex flex-col items-start leading-tight">
+            <span className="font-bold text-qassimDark text-sm sm:text-base">
+              استراتيجياتنا التعليمية
+            </span>
+            <span className="text-xs text-qassimLight hidden sm:block">
+              تعلم، طبّق، أبدع!
+            </span>
+          </div>
+        </Link>
 
         {/* قائمة سطح المكتب */}
         <div className="hidden md:flex items-center gap-4">
-          <NavLink to="/" className={active}>الرئيسية</NavLink>
-          <NavLink to="/strategies" className={active}>الاستراتيجيات</NavLink>
-          {user && <NavLink to="/submit" className={active}>إضافة استراتيجية</NavLink>}
-          {user && <NavLink to="/admin" className={active}>لوحة التحكم</NavLink>}
+          <NavLink to="/" className={active}>
+            الرئيسية
+          </NavLink>
+          <NavLink to="/strategies" className={active}>
+            الاستراتيجيات
+          </NavLink>
+          {user && (
+            <NavLink to="/submit" className={active}>
+              إضافة استراتيجية
+            </NavLink>
+          )}
+          {user && (
+            <NavLink to="/admin" className={active}>
+              لوحة التحكم
+            </NavLink>
+          )}
 
-          {/* استبدال "عن المشروع" بـ "من نحن" وتكون آخر شيء */}
-          <NavLink to="/about" className={active}>من نحن</NavLink>
+          {/* من نحن آخر شيء */}
+          <NavLink to="/about" className={active}>
+            من نحن
+          </NavLink>
 
+          {/* يمين: تسجيل الدخول / البروفايل + تسجيل الخروج */}
           {!user ? (
-            <NavLink to="/login" className="btn btn-primary">تسجيل الدخول</NavLink>
+            <NavLink to="/login" className="btn btn-primary">
+              تسجيل الدخول
+            </NavLink>
           ) : (
-            <button onClick={() => signOut(auth)} className="btn btn-light">تسجيل الخروج</button>
+            <div className="flex items-center gap-3">
+              {user && (
+  <Link
+    to="/profile"
+    className="w-9 h-9 rounded-full overflow-hidden border-2 border-qassimIndigo/20 hover:opacity-90 transition"
+  >
+    <img
+      src="/avatar1.jpg"
+      alt="الصورة الشخصية"
+      className="w-full h-full object-cover"
+    />
+  </Link>
+)}
+              <button
+                onClick={() => signOut(auth)}
+                className="btn btn-light"
+              >
+                تسجيل الخروج
+              </button>
+            </div>
           )}
         </div>
 
@@ -69,7 +109,7 @@ export default function Navbar() {
       {/* القائمة الجانبية للجوال */}
       <div
         className={`fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-xl border-l border-gray-200 transform transition-transform duration-300 ease-in-out z-40 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -80,18 +120,64 @@ export default function Navbar() {
         </div>
 
         <div className="flex flex-col items-start gap-4 px-6 py-4">
-          <NavLink to="/" onClick={closeMenu} className={active}>الرئيسية</NavLink>
-          <NavLink to="/strategies" onClick={closeMenu} className={active}>الاستراتيجيات</NavLink>
-          {user && <NavLink to="/submit" onClick={closeMenu} className={active}>إضافة استراتيجية</NavLink>}
-          {user && <NavLink to="/admin" onClick={closeMenu} className={active}>لوحة التحكم</NavLink>}
-          
+          <NavLink to="/" onClick={closeMenu} className={active}>
+            الرئيسية
+          </NavLink>
+          <NavLink to="/strategies" onClick={closeMenu} className={active}>
+            الاستراتيجيات
+          </NavLink>
+          {user && (
+            <NavLink to="/submit" onClick={closeMenu} className={active}>
+              إضافة استراتيجية
+            </NavLink>
+          )}
+          {user && (
+            <NavLink to="/admin" onClick={closeMenu} className={active}>
+              لوحة التحكم
+            </NavLink>
+          )}
+
           {/* من نحن آخر خيار في القائمة */}
-          <NavLink to="/about" onClick={closeMenu} className={active}>من نحن</NavLink>
+          <NavLink to="/about" onClick={closeMenu} className={active}>
+            من نحن
+          </NavLink>
 
           {!user ? (
-            <NavLink to="/login" onClick={closeMenu} className="btn btn-primary w-full text-center">تسجيل الدخول</NavLink>
+            <NavLink
+              to="/login"
+              onClick={closeMenu}
+              className="btn btn-primary w-full text-center"
+            >
+              تسجيل الدخول
+            </NavLink>
           ) : (
-            <button onClick={() => { signOut(auth); closeMenu(); }} className="btn btn-light w-full">تسجيل الخروج</button>
+            <div className="flex flex-col gap-3 w-full">
+              {/* زر البروفايل في الجوال */}
+              <Link
+                to="/profile"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-3 py-2 border rounded-lg bg-gray-50 hover:bg-gray-100 transition text-qassimDark w-full"
+              >
+                 <div className="w-8 h-8 rounded-full overflow-hidden border border-qassimIndigo/20">
+  <img
+    src="/avatar1.jpg"
+    alt="avatar"
+    className="w-full h-full object-cover"
+  />
+</div>
+                <span>الملف الشخصي</span>
+              </Link>
+
+              <button
+                onClick={() => {
+                  signOut(auth);
+                  closeMenu();
+                }}
+                className="btn btn-light w-full"
+              >
+                تسجيل الخروج
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -104,5 +190,5 @@ export default function Navbar() {
         ></div>
       )}
     </header>
-  )
+  );
 }
