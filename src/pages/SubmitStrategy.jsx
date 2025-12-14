@@ -1,6 +1,13 @@
 // src/pages/SubmitStrategy.jsx
 import { useState, useEffect } from "react";
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { db } from "../firebase/config";
 import { useAuth } from "../firebase/AuthContext";
@@ -10,7 +17,9 @@ import { uploadToCloudinary } from "../lib/cloudinaryUpload";
 export default function SubmitStrategy() {
   const { user } = useAuth();
   const [params] = useSearchParams();
+
   const editId = params.get("id");
+  const ownerId = params.get("u") || user?.uid; // ✅ مهم: صاحب الاستراتيجية الحقيقي (للأدمن + المستخدم)
 
   const [loaded, setLoaded] = useState(false);
 
@@ -36,8 +45,8 @@ export default function SubmitStrategy() {
     { question: "", options: ["", "", "", ""], correct: 1 },
   ]);
 
-  const [file, setFile] = useState(null); 
-  const [existingFile, setExistingFile] = useState(null); 
+  const [file, setFile] = useState(null);
+  const [existingFile, setExistingFile] = useState(null);
 
   const [msg, setMsg] = useState("");
   const [success, setSuccess] = useState(false);
@@ -46,13 +55,20 @@ export default function SubmitStrategy() {
   // تعبئة الحقول عند التعديل
   useEffect(() => {
     async function load() {
+      // لو إضافة جديدة → خلصنا
       if (!editId) {
         setLoaded(true);
         return;
       }
 
+      // ✅ ننتظر لين يجي user/ownerId
+      if (!ownerId) return;
+
       try {
-        const snap = await getDoc(doc(db, "users", user.uid, "strategies", editId));
+        const snap = await getDoc(
+          doc(db, "users", ownerId, "strategies", editId)
+        );
+
         if (snap.exists()) {
           const data = snap.data();
 
@@ -77,10 +93,10 @@ export default function SubmitStrategy() {
 
           setQuiz(
             Array.isArray(data.quiz) && data.quiz.length > 0
-              ? data.quiz.map(q => ({
+              ? data.quiz.map((q) => ({
                   question: q.question,
                   options: q.options,
-                  correct: q.correct
+                  correct: q.correct,
                 }))
               : [{ question: "", options: ["", "", "", ""], correct: 1 }]
           );
@@ -97,10 +113,9 @@ export default function SubmitStrategy() {
     }
 
     load();
-  }, [editId]);
+  }, [editId, ownerId]);
 
-  const change = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleRefChange = (i, field, value) => {
     const updated = [...references];
@@ -129,7 +144,10 @@ export default function SubmitStrategy() {
   };
 
   const addQuestion = () => {
-    setQuiz([...quiz, { question: "", options: ["", "", "", ""], correct: 1 }]);
+    setQuiz([
+      ...quiz,
+      { question: "", options: ["", "", "", ""], correct: 1 },
+    ]);
   };
 
   const submit = async (e) => {
@@ -137,85 +155,83 @@ export default function SubmitStrategy() {
     setMsg("");
     setLoading(true);
 
-    /** 🔥 التعديل الوحيد هنا 🔥 **/
-   /** 🔥 التعديل يبدأ هنا 🔥 **/
-let worksheetURL = existingFile ?? null;
+    let worksheetURL = existingFile ?? null;
 
-try {
-  // validation
-  for (const [key, value] of Object.entries(form)) {
-    if (key !== "videoURL" && !value.trim()) {
-      setMsg("⚠️ يرجى تعبئة جميع الحقول قبل الإرسال");
+    try {
+      // ✅ تأكد المستخدم موجود
+      if (!user?.uid) {
+        setMsg("⚠️ يجب تسجيل الدخول أولاً");
+        setLoading(false);
+        return;
+      }
+
+      // validation
+      for (const [key, value] of Object.entries(form)) {
+        if (key !== "videoURL" && !value.trim()) {
+          setMsg("⚠️ يرجى تعبئة جميع الحقول قبل الإرسال");
+          setLoading(false);
+          return;
+        }
+      }
+
+      for (const q of quiz) {
+        if (!q.question.trim()) {
+          setMsg("⚠️ يرجى كتابة كل الأسئلة");
+          setLoading(false);
+          return;
+        }
+        if (q.correct < 1 || q.correct > 4) {
+          setMsg("⚠️ الإجابة الصحيحة يجب أن تكون بين 1–4");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // رفع ملف جديد فقط إذا رفع المستخدم ملف جديد
+      if (file) {
+        const max = 20 * 1024 * 1024;
+        if (file.size > max) {
+          setMsg("⚠️ حجم الملف يتجاوز 20MB");
+          setLoading(false);
+          return;
+        }
+
+        worksheetURL = await uploadToCloudinary(file, user.email);
+      }
+
+      // ✅ تعديل
+      if (editId) {
+        const uid = params.get("u") || user.uid; // نفس منطق ownerId لكن نتركه زي ما عندك
+
+        const ref = doc(db, "users", uid, "strategies", editId);
+
+        await updateDoc(ref, {
+          ...form,
+          references,
+          quiz,
+          worksheetURL,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // ✅ إضافة جديدة
+        await addDoc(collection(db, "users", user.uid, "strategies"), {
+          ...form,
+          references,
+          quiz,
+          worksheetURL,
+          status: "pending",
+          submittedBy: user.displayName || user.email,
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      setMsg(err?.message || "حدث خطأ غير متوقع.");
+    } finally {
       setLoading(false);
-      return;
     }
-  }
-
-  for (const q of quiz) {
-    if (!q.question.trim()) {
-      setMsg("⚠️ يرجى كتابة كل الأسئلة");
-      setLoading(false);
-      return;
-    }
-    if (q.correct < 1 || q.correct > 4) {
-      setMsg("⚠️ الإجابة الصحيحة يجب أن تكون بين 1–4");
-      setLoading(false);
-      return;
-    }
-  }
-
-  // رفع ملف جديد فقط إذا رفع المستخدم ملف جديد
-  if (file) {
-    const max = 20 * 1024 * 1024;
-    if (file.size > max) {
-      setMsg("⚠️ حجم الملف يتجاوز 20MB");
-      setLoading(false);
-      return;
-    }
-
-    worksheetURL = await uploadToCloudinary(file, user.email);
-  }
-
-  /** --------------------------------------
-   * 🔥 تعديل → المسار الجديد فقط ONLY
-   * -------------------------------------- **/
-  if (editId) {
-    const uid = params.get("u") || user.uid; // fallback لو ما مرّرت src=u
-
-    const ref = doc(db, "users", uid, "strategies", editId);
-
-    await updateDoc(ref, {
-      ...form,
-      references,
-      quiz,
-      worksheetURL,
-      updatedAt: serverTimestamp(),
-    });
-
-  } else {
-    /** --------------------------------------
-     * 🔥 إضافة جديدة → المسار الجديد ONLY
-     * -------------------------------------- **/
-    await addDoc(collection(db, "users", user.uid, "strategies"), {
-      ...form,
-      references,
-      quiz,
-      worksheetURL,
-      status: "pending",
-      submittedBy: user.displayName || user.email,
-      userId: user.uid,
-      timestamp: serverTimestamp(),
-    });
-  }
-
-  setSuccess(true);
-
-} catch (err) {
-  setMsg(err.message || "حدث خطأ غير متوقع.");
-} finally {
-  setLoading(false);
-}
-
   };
 
   if (!loaded) return <p className="text-center mt-20">جاري التحميل...</p>;
@@ -245,7 +261,6 @@ try {
       </h2>
 
       <form onSubmit={submit} className="space-y-6">
-
         <Field label="اسم الاستراتيجية" name="name" value={form.name} onChange={change} required />
         <Field label="تعريفها العلمي" name="definition" value={form.definition} onChange={change} multiline required />
         <Field label="أهدافها" name="objectives" value={form.objectives} onChange={change} multiline required />
@@ -253,28 +268,29 @@ try {
         <Field label="دور المعلم" name="teacherRole" value={form.teacherRole} onChange={change} multiline required />
         <Field label="دور المتعلم" name="studentRole" value={form.studentRole} onChange={change} multiline required />
         <Field label="مميزاتها التربوية" name="advantages" value={form.advantages} onChange={change} multiline required />
-        <Field
-          label="عيوب الاستراتيجية"
-          name="disadvantages"
-          value={form.disadvantages}
-          onChange={change}
-          multiline
-          required
-        />
+        <Field label="عيوب الاستراتيجية" name="disadvantages" value={form.disadvantages} onChange={change} multiline required />
         <Field label="متى تُستخدم؟" name="situations" value={form.situations} onChange={change} multiline required />
 
         {/* References */}
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-semibold text-qassimDark">المراجع (APA)</label>
-            <button type="button" onClick={addReference} className="flex items-center gap-1 text-qassimIndigo hover:text-qassimLight text-sm">
+            <button
+              type="button"
+              onClick={addReference}
+              className="flex items-center gap-1 text-qassimIndigo hover:text-qassimLight text-sm"
+            >
               <Plus size={16} /> إضافة مرجع
             </button>
           </div>
 
           {references.map((ref, i) => (
             <div key={i} className="border rounded-lg mb-3 bg-white">
-              <button type="button" onClick={() => setOpenRef(openRef === i ? null : i)} className="w-full flex justify-between items-center px-4 py-2 font-semibold text-qassimDark text-sm bg-gray-100 rounded-t-lg">
+              <button
+                type="button"
+                onClick={() => setOpenRef(openRef === i ? null : i)}
+                className="w-full flex justify-between items-center px-4 py-2 font-semibold text-qassimDark text-sm bg-gray-100 rounded-t-lg"
+              >
                 <span>المرجع {i + 1}</span>
                 {openRef === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
@@ -296,7 +312,11 @@ try {
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-semibold text-qassimDark">اختبار قصير</label>
-            <button type="button" onClick={addQuestion} className="flex items-center gap-1 text-qassimIndigo hover:text-qassimLight text-sm">
+            <button
+              type="button"
+              onClick={addQuestion}
+              className="flex items-center gap-1 text-qassimIndigo hover:text-qassimLight text-sm"
+            >
               <Plus size={16} /> إضافة سؤال
             </button>
           </div>
@@ -322,7 +342,9 @@ try {
           <label className="block text-sm font-semibold text-qassimDark mb-1">ورقة العمل (PDF/Word)</label>
 
           {existingFile && !file && (
-            <p className="text-sm text-green-700 mb-2">📄 يوجد ملف مرفوع مسبقًا وسيبقى كما هو ما لم ترفع ملفًا جديدًا</p>
+            <p className="text-sm text-green-700 mb-2">
+              📄 يوجد ملف مرفوع مسبقًا وسيبقى كما هو ما لم ترفع ملفًا جديدًا
+            </p>
           )}
 
           <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} className="block w-full text-sm border rounded-lg p-2" />
@@ -330,8 +352,7 @@ try {
 
         <button
           disabled={loading}
-          className={`w-full py-3 font-semibold rounded-lg shadow-sm transition 
-            text-center flex justify-center items-center
+          className={`w-full py-3 font-semibold rounded-lg shadow-sm transition text-center flex justify-center items-center
             ${loading ? "bg-gray-400" : "bg-qassimIndigo text-white hover:bg-qassimLight"}
           `}
         >

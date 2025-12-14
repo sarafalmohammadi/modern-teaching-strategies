@@ -1,98 +1,136 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '../firebase/config'
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "../firebase/config";
 
 export default function Strategies() {
-  const [items, setItems] = useState([])
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const navigate = useNavigate()
+  const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("newest"); // newest | oldest | az | za
+
+  const navigate = useNavigate();
 
   // ===============================
-  // تحميل المستخدمين لجلب الاسم الصحيح
+  // تحميل المستخدمين (مرة واحدة)
   // ===============================
   useEffect(() => {
-    const loadUsers = async () => {
-      const snap = await getDocs(collection(db, 'users'))
-      const arr = []
-      snap.forEach((d) => arr.push({ id: d.id, ...d.data() }))
-      setUsers(arr)
-    }
-    loadUsers()
-  }, [])
+    const loadUsersAndStrategies = async () => {
+      setLoading(true);
+      try {
+        // 1) users مرة وحدة
+        const usersSnap = await getDocs(collection(db, "users"));
+        const usersArr = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setUsers(usersArr);
 
-  useEffect(() => {
-  const fetchStrategies = async () => {
-    try {
-      const all = [];
+        // 2) جلب strategies لكل user بشكل parallel batching
+        const all = [];
 
-      // نجيب كل المستخدمين
-      const usersSnap = await getDocs(collection(db, "users"));
+        // سوينا batches عشان ما نفتح 1000 request دفعة وحدة لو العدد كبير
+        const batchSize = 25;
+        for (let i = 0; i < usersSnap.docs.length; i += batchSize) {
+          const chunk = usersSnap.docs.slice(i, i + batchSize);
 
-      for (const userDoc of usersSnap.docs) {
-        const uid = userDoc.id;
+          const promises = chunk.map(async (userDoc) => {
+            const uid = userDoc.id;
 
-        const strategiesSnap = await getDocs(
-          collection(db, "users", uid, "strategies")
-        );
+            // ✅ Query يقلل reads: يجيب المعتمد فقط
+            // hidden: هنا ما نحطه where لأن بعض الدوكمنتات ممكن ما فيها hidden
+            // نخليه فلترة بالفرونت (data.hidden !== true)
+            const q = query(
+              collection(db, "users", uid, "strategies"),
+              where("status", "==", "approved")
+            );
 
-        strategiesSnap.forEach((doc2) => {
-          const data = doc2.data();
+            const strategiesSnap = await getDocs(q);
 
-          // ❌ تجاهل الاستراتيجيات غير المعتمدة
-          if (data.status !== "approved") return;
+            strategiesSnap.forEach((doc2) => {
+              const data = doc2.data();
 
-          // ❌ تجاهل الاستراتيجيات المخفية
-          if (data.hidden === true) return;
+              // ✅ تجاهل المخفية (يشمل undefined باعتباره غير مخفي)
+              if (data.hidden === true) return;
 
-          all.push({
-            id: doc2.id,
-            userId: uid,
-            source: "new",
-            ...data,
+              all.push({
+                id: doc2.id,
+                userId: uid,
+                source: "new",
+                ...data,
+              });
+            });
           });
-        });
-      }
 
-      setItems(all);
-    } catch (err) {
-      console.error("Error loading strategies:", err);
-    } finally {
-      setLoading(false);
-    }
+          await Promise.all(promises);
+        }
+
+        setItems(all);
+      } catch (err) {
+        console.error("Error loading strategies:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsersAndStrategies();
+  }, []);
+
+  // ===== اسم صاحب الاستراتيجية =====
+  const getUserName = (uid) => {
+    const u = users.find((x) => x.id === uid);
+    return u?.name || "—";
   };
 
-  fetchStrategies();
-}, [])
-
-  // إحضار الاسم الحقيقي من users/{uid}
-  const getUserName = (uid) => {
-    const u = users.find((x) => x.id === uid)
-    return u?.name || '—'
-  }
-
   const formatDate = (seconds) => {
-    if (!seconds) return '—'
-    const date = new Date(seconds * 1000)
-    return date.toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+    if (!seconds) return "—";
+    const date = new Date(seconds * 1000);
+    return date.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-  const filtered = items.filter((it) =>
-    it.name?.toLowerCase().includes(search.toLowerCase())
-  )
+  // ===== Filter + Sort (بدون ما نلمس الداتا) =====
+  const filteredAndSorted = useMemo(() => {
+    const s = search.trim().toLowerCase();
+
+    let arr = items;
+
+    if (s) {
+      arr = arr.filter((it) => (it.name || "").toLowerCase().includes(s));
+    }
+
+    const getTs = (x) => x?.timestamp?.seconds || 0;
+
+    arr = [...arr].sort((a, b) => {
+      switch (sort) {
+        case "oldest":
+          return getTs(a) - getTs(b);
+        case "az":
+          return (a.name || "").localeCompare(b.name || "", "ar");
+        case "za":
+          return (b.name || "").localeCompare(a.name || "", "ar");
+        case "newest":
+        default:
+          return getTs(b) - getTs(a);
+      }
+    });
+
+    return arr;
+  }, [items, search, sort]);
 
   if (loading) {
     return (
       <p className="text-center text-gray-600 mt-8">
         جارٍ تحميل الاستراتيجيات...
       </p>
-    )
+    );
   }
 
   return (
@@ -101,24 +139,35 @@ export default function Strategies() {
         قائمة الاستراتيجيات المعتمدة
       </h2>
 
-      {/* 🔍 البحث */}
-      <div className="max-w-md mx-auto mb-6">
+      {/* 🔍 البحث + الفرز */}
+      <div className="max-w-3xl mx-auto mb-6 flex flex-col md:flex-row gap-3 items-stretch md:items-center">
         <input
           type="text"
           placeholder="ابحث باسم الاستراتيجية..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-qassimIndigo"
+          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-qassimIndigo"
         />
+
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+        >
+          <option value="newest">الأحدث أولًا</option>
+          <option value="oldest">الأقدم أولًا</option>
+          <option value="az">ترتيب أبجدي A-Z</option>
+          <option value="za">ترتيب أبجدي Z-A</option>
+        </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {filteredAndSorted.length === 0 ? (
         <p className="text-center text-gray-600">
           لا توجد استراتيجيات مطابقة لبحثك.
         </p>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((it) => (
+          {filteredAndSorted.map((it) => (
             <div
               key={it.userId + "-" + it.id}
               onClick={() =>
@@ -131,13 +180,14 @@ export default function Strategies() {
                   {it.name}
                 </h3>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {it.definition || '—'}
+                  {it.definition || "—"}
                 </p>
               </div>
 
               <div className="mt-4 flex justify-between items-center text-xs text-gray-500">
                 <p>
-                  مقدمة من: <span className='font-semibold'>{getUserName(it.userId)}</span>
+                  مقدمة من:{" "}
+                  <span className="font-semibold">{getUserName(it.userId)}</span>
                 </p>
                 <p>{formatDate(it.timestamp?.seconds)}</p>
               </div>
@@ -146,5 +196,5 @@ export default function Strategies() {
         </div>
       )}
     </section>
-  )
+  );
 }

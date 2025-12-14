@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { auth, db } from '../firebase/config';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -31,24 +32,51 @@ export default function Login() {
   };
 
   const submit = async (e) => {
-    e.preventDefault();
-    setMsg('');
-    if (!email || !password) {
-      return setMsg('⚠️ الرجاء تعبئة البريد وكلمة المرور.');
+  e.preventDefault();
+  setMsg('');
+  if (!email || !password) {
+    return setMsg('⚠️ الرجاء تعبئة البريد وكلمة المرور.');
+  }
+
+  try {
+    setLoading(true);
+
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+    const u = cred.user;
+
+    // ✅ حاول أنشئ/حدّث users/{uid}
+    try {
+      const userRef = doc(db, "users", u.uid);
+
+      await setDoc(
+        userRef,
+        {
+          uid: u.uid,
+          email: u.email,
+          name: u.displayName || u.email,
+          role: "student",
+          active: true,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (fireErr) {
+      console.error("❌ USERS DOC WRITE FAILED:", fireErr?.code, fireErr?.message, fireErr);
+      // هذا بالذات يثبت إنها Rules
+      setMsg("⚠️ تم تسجيل الدخول لكن تعذر حفظ بيانات المستخدم في Firestore (تحققي من Rules).");
+      // كمّلي الدخول عادي حتى ما تنكسر التجربة
     }
 
-    try {
-      setLoading(true);
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      setMsg('✅ تم تسجيل الدخول بنجاح، جاري التحميل...');
-      setTimeout(() => nav('/'), 800);
-    } catch (err) {
-      console.error('[Login Error]', err.code, err.message);
-      setMsg(explainAuthError(err.code));
-    } finally {
-      setLoading(false);
-    }
-  };
+    setMsg('✅ تم تسجيل الدخول بنجاح، جاري التحميل...');
+    setTimeout(() => nav('/'), 800);
+  } catch (err) {
+    console.error('[Login Error]', err.code, err.message);
+    setMsg(explainAuthError(err.code));
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const reset = async () => {
     if (!email) return setMsg('⚠️ أدخل بريدك الإلكتروني أولًا.');
