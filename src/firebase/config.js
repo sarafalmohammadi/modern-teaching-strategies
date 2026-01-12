@@ -22,5 +22,6 @@ export const storage = getStorage(app)
 export const ADMIN_EMAILS = [
   'sara.falmohammadi@gmail.com',
   'alrefaeinedaa@gmail.com',
+  'lalharbi2012@gmail.com',
   'amanii.almalki@gmail.com'
 ]

@@ -523,16 +523,6 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <div className="flex gap-2 admin-actions">
-                    <button
-                      onClick={() => toggleUserStatus(u.id, u.active)}
-                      className={`border px-3 py-1 rounded-md ${
-                        u.active
-                          ? 'border-red-600 text-red-600 hover:bg-red-50'
-                          : 'border-green-600 text-green-600 hover:bg-green-50'
-                      }`}
-                    >
-                      {u.active ? 'تعطيل' : 'تفعيل'}
-                    </button>
 
                     <button
                       onClick={() => resetPassword(u.email)}
@@ -541,12 +531,7 @@ export default function AdminDashboard() {
                       إعادة تعيين كلمة المرور
                     </button>
 
-                    <button
-                      onClick={() => removeUser(u.id)}
-                      className="border border-red-600 text-red-600 px-3 py-1 rounded-md hover:bg-red-50"
-                    >
-                      حذف
-                    </button>
+
                   </div>
                 </div>
               ))
